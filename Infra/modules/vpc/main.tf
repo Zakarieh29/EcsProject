@@ -56,6 +56,11 @@ resource "aws_route_table_association" "custom_rta" {
 resource "aws_route_table" "private_routetable" {
   vpc_id = aws_vpc.custom_vpc.id
 
+route {
+    cidr_block     = var.route_table_cidr_block
+    nat_gateway_id = aws_nat_gateway.custom_nat.id
+  }
+
   tags = {
     Name = "private_routetable"
   }
@@ -64,4 +69,25 @@ resource "aws_route_table" "private_routetable" {
 resource "aws_route_table_association" "private_rta" {
   subnet_id      = aws_subnet.private_sn.id
   route_table_id = aws_route_table.private_routetable.id
+}
+
+resource "aws_eip" "nat_eip" {
+  domain = "vpc"
+
+  tags = {
+    Name = "nat_eip"
+  }
+}
+
+resource "aws_nat_gateway" "custom_nat" {
+  allocation_id = aws_eip.nat_eip.id
+  subnet_id     = aws_subnet.public_sn.id
+
+  tags = {
+    Name = "custom_nat"
+  }
+
+  depends_on = [
+    aws_internet_gateway.igw_custom
+  ]
 }
